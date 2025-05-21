@@ -51,9 +51,13 @@ jobs:
       - name: Extract SDK_TEST_TOKEN
         working-directory: server
         run: |
+          echo "=== RAW API LOGS START ==="
           # Grab all the logs, then find the first "Token:" line anywhere and strip up to the colon
+          docker compose -f docker-compose.test.yml logs api
+          echo "=== RAW API LOGS END ==="
+
+          # Now capture them into a variable
           RAW=$(docker compose -f docker-compose.test.yml logs api)
-          echo "$RAW"                        # for debugging
           TOKEN=$(echo "$RAW" \
                     | grep 'Token:' \
                     | head -n1 \
