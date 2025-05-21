@@ -30,22 +30,34 @@ jobs:
           docker compose -f docker-compose.test.yml up --build -d
 
       # 5) Wait until API responds
-      - name: Wait for API (allow 401)
-        shell: bash
+      - name: Verify "api" container is up
         run: |
-          for i in $(seq 1 30); do
-            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/models/)
-            if [[ "$status" == "200" || "$status" == "401" ]]; then
-              echo "✅ API is up (status $status)"
-              exit 0
-            fi
-            echo "⏳ Waiting for API… (status $status)"
-            sleep 2
-          done
+          # This will print something like:
+          #    Name   Command   Service   Status            Ports
+          # federated-learning-clinical-safety-server-api-1   ...   api   Up Less than a second   0.0.0.0:8000->8000/tcp
+          docker compose -f docker-compose.test.yml ps api
 
-          echo "❌ API did not become ready in time"
-          docker compose -f docker-compose.test.yml logs api
-          exit 1
+          # Now verify the word "Up" appears in the status column
+          if ! docker compose -f docker-compose.test.yml ps api \
+               | grep -qw Up; then
+            echo "❌ api service did not start properly"
+            docker compose -f docker-compose.test.yml logs api
+            exit 1
+          fi
+
+          echo "✅ api container is Up"
+
+      - name: Check port 8000 is listening
+        run: |
+          # 'ss' is available on ubuntu-latest runners
+          if ! ss -ltn | grep -q ':8000'; then
+            echo "❌ Nothing is listening on port 8000"
+            docker compose -f docker-compose.test.yml logs api
+            exit 1
+          fi
+
+          echo "✅ api is listening on port 8000"
+
       
 
       # 6) Install & run SDK tests
