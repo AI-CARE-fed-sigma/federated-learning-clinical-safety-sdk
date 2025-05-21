@@ -32,3 +32,26 @@ Linux/MacOS/Unix-like systems:
 pipx install poetry
 ```
 
+## Publishing new versions
+
+This repo is set up with Continuous Deployment to automatically deploy new packages to PyPi.
+
+To deploy a new version, do the following.
+
+1. Bump the package version
+
+```bash
+poetry version patch
+```
+
+2. Create a matching git tag
+
+```bash
+git tag v<version number (i.e. 0.1.1)>
+```
+
+3. Push the tag to GitHub
+
+```bash
+git push origin v<version number from step 2 (i.e. 0.1.1)>
+```
