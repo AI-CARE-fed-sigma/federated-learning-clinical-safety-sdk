@@ -48,18 +48,18 @@ jobs:
           fi
           echo "✅ api container is Up"
 
-     - name: Debug container filesystem
-       working-directory: server
-       run: |
-         CID=$(docker compose -f docker-compose.test.yml ps -q api)
-         echo "⏱ Inspecting container $CID…"
-         echo "--- /tmp contents ---"
-         docker exec $CID ls -lah /tmp || true
-         echo "--- root contents (just in case) ---"
-         docker exec $CID ls -lah / || true
-         echo "--- container logs ---"
-         docker compose -f docker-compose.test.yml logs api
-         exit 1  # stop here so you can read the debug output
+      - name: Debug container filesystem
+        working-directory: server
+        run: |
+          CID=$(docker compose -f docker-compose.test.yml ps -q api)
+          echo "⏱ Inspecting container $CID…"
+          echo "--- /tmp contents ---"
+          docker exec $CID ls -lah /tmp || true
+          echo "--- root contents (just in case) ---"
+          docker exec $CID ls -lah / || true
+          echo "--- container logs ---"
+          docker compose -f docker-compose.test.yml logs api
+          exit 1  # stop here so you can read the debug output
 
       - name: Extract SDK_TEST_TOKEN from file
         working-directory: server
