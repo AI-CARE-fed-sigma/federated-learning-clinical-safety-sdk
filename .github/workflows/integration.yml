@@ -19,9 +19,13 @@ jobs:
       - name: Install Docker Compose
         run: sudo apt-get update && sudo apt-get install -y docker-compose
 
-      - name: Build & start server (with seed & uploader)
+      - name: Build server image without cache
         working-directory: server
-        run: docker compose -f docker-compose.test.yml up --build --force-recreate --no-cache -d
+        run: docker compose -f docker-compose.test.yml build --no-cache
+
+      - name: Bring up server (fresh build)
+        working-directory: server
+        run: docker compose -f docker-compose.test.yml up --force-recreate -d
 
       - name: Wait for API to bind port 8000
         working-directory: server
