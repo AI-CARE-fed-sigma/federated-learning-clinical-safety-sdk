@@ -51,14 +51,20 @@ jobs:
       - name: Extract SDK_TEST_TOKEN
         working-directory: server
         run: |
-          LOGS=$(docker compose -f docker-compose.test.yml logs api)
-          echo "$LOGS"
-          TOKEN=$(echo "$LOGS" | grep '^Token:' | head -n1 | awk '{print $2}')
+          # Grab all the logs, then find the first "Token:" line anywhere and strip up to the colon
+          RAW=$(docker compose -f docker-compose.test.yml logs api)
+          echo "$RAW"                        # for debugging
+          TOKEN=$(echo "$RAW" \
+                    | grep 'Token:' \
+                    | head -n1 \
+                    | sed -E 's/.*Token:[[:space:]]*//')
           if [ -z "$TOKEN" ]; then
-            echo "❌ Could not find Token in logs"
+            echo "❌ Could not find 'Token:' in logs"
             exit 1
           fi
+          echo "✅ Extracted token: $TOKEN"
           echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
+
 
       - name: Setup Python & Poetry
         uses: actions/setup-python@v4
