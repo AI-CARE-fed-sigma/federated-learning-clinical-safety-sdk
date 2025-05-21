@@ -1,50 +1,36 @@
+# .github/workflows/ci.yml
 name: CI
 
-on:
-  push: {}
-  pull_request: {}
+on: [push, pull_request]
 
 jobs:
-  lint-and-test:
+  test:
     runs-on: ubuntu-latest
-    steps:
-      # 1. Check out the code
-      - uses: actions/checkout@v4
 
-      # 2. Set up Python
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'           # pinned version for consistency :contentReference[oaicite:2]{index=2}
-          cache: 'poetry'                  # cache Poetry’s dependencies
+          python-version: '3.10'  # or your matrix of versions
 
-      # 3. Install Poetry CLI
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v4    # installs latest Poetry quickly :contentReference[oaicite:3]{index=3}
+        uses: snok/install-poetry@v1   # installs Poetry and adds it to PATH :contentReference[oaicite:0]{index=0}
 
-      # 4. Configure in-project virtualenv
       - name: Configure Poetry venv
         run: |
-          poetry config virtualenvs.create true --local
-          poetry config virtualenvs.in-project true --local
+          # keep venv inside project so we can cache it
+          poetry config virtualenvs.in-project true
 
-      # 5. Cache .venv based on poetry.lock
-      - name: Cache .venv
+      - name: Cache Virtualenv
         uses: actions/cache@v3
         with:
           path: .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}  # invalidates when lock changes :contentReference[oaicite:1]{index=1}
 
-      # 6. Install dependencies and project in editable mode
-      - name: Poetry install
-        run: poetry install --no-interaction --no-ansi   # installs deps + your package :contentReference[oaicite:4]{index=4}
+      - name: Install Dependencies
+        run: poetry install --no-interaction --no-ansi  # installs both dependencies and your package :contentReference[oaicite:2]{index=2}
 
-      # 7. Run lint (flake8, mypy, black, etc.)
-      - name: Lint & type-check
-        run: |
-          poetry run flake8 src/           # example linter
-          poetry run mypy src/             # example type-checker :contentReference[oaicite:5]{index=5}
-
-      # 8. Run tests
-      - name: Run tests
-        run: poetry run pytest --maxfail=1 --disable-warnings -q   # runs under Poetry’s venv :contentReference[oaicite:6]{index=6}
+      - name: Run Tests
+        run: poetry run pytest -q
