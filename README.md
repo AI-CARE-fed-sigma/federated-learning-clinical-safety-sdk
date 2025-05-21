@@ -9,6 +9,8 @@ This is the documentation for the Federated Learning Clinical Safety Dashboard S
 
 ## Using the SDK
 
+The package is [available from PyPi](https://pypi.org/project/federated-learning-clinical-safety-sdk/).
+
 ### Installation
 
 ```bash

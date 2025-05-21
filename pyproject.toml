@@ -1,9 +1,14 @@
 [tool.poetry]
 name = "federated-learning-clinical-safety-sdk"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python SDK for the Federated Learning Clinical Safety API"
 authors = ["Alexander Dobson-Pleming <alexdobsonpleming@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+homepage   = "https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk"
+repository = "https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk"
+keywords   = ["federated-learning", "sdk", "clinical", "safety", "django"]
+
 
 packages = [
   { include = "api_sdk", from = "src" }
