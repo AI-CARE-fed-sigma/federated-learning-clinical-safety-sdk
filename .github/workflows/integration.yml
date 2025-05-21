@@ -48,25 +48,19 @@ jobs:
           fi
           echo "✅ api container is Up"
 
-      - name: Extract SDK_TEST_TOKEN
+      - name: Extract SDK_TEST_TOKEN from file
         working-directory: server
         run: |
-          echo "=== RAW API LOGS START ==="
-          # Grab all the logs, then find the first "Token:" line anywhere and strip up to the colon
-          docker compose -f docker-compose.test.yml logs api
-          echo "=== RAW API LOGS END ==="
+          # find the container ID for the api service
+          CID=$(docker compose -f docker-compose.test.yml ps -q api)
+          echo "📦 api container ID is $CID"
 
-          # Now capture them into a variable
-          RAW=$(docker compose -f docker-compose.test.yml logs api)
-          TOKEN=$(echo "$RAW" \
-                    | grep 'Token:' \
-                    | head -n1 \
-                    | sed -E 's/.*Token:[[:space:]]*//')
-          if [ -z "$TOKEN" ]; then
-            echo "❌ Could not find 'Token:' in logs"
-            exit 1
-          fi
-          echo "✅ Extracted token: $TOKEN"
+          # copy the token file out
+          docker cp $CID:/tmp/uploader_token.txt uploader_token.txt
+
+          # read it into an env var
+          TOKEN=$(cat uploader_token.txt)
+          echo "✅ Got SDK_TEST_TOKEN=$TOKEN"
           echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
 
 
