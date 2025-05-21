@@ -31,9 +31,9 @@ jobs:
 
       # 5) Wait until API responds
       - name: Wait for API (allow 401)
+        shell: bash
         run: |
-          for i in {1..30}; do
-            # -s: silent, -o /dev/null: discard body, -w "%{http_code}": write status
+          for i in $(seq 1 30); do
             status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/models/)
             if [[ "$status" == "200" || "$status" == "401" ]]; then
               echo "✅ API is up (status $status)"
@@ -42,9 +42,11 @@ jobs:
             echo "⏳ Waiting for API… (status $status)"
             sleep 2
           done
+
           echo "❌ API did not become ready in time"
           docker compose -f docker-compose.test.yml logs api
           exit 1
+      
 
       # 6) Install & run SDK tests
       - name: Setup Python & Poetry
