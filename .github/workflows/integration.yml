@@ -21,7 +21,7 @@ jobs:
 
       - name: Build & start server (with seed & uploader)
         working-directory: server
-        run: docker compose -f docker-compose.test.yml up --build -d
+        run: docker compose -f docker-compose.test.yml up --build --force-recreate --no-cache -d
 
       - name: Wait for API to bind port 8000
         working-directory: server
