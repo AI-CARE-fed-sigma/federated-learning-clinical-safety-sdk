@@ -5,63 +5,61 @@ on: [push, pull_request]
 jobs:
   integration:
     runs-on: ubuntu-latest
+
     steps:
-      # 1) Checkout your SDK
       - name: Checkout SDK
         uses: actions/checkout@v4
 
-      # 2) Checkout the server repo into ./server
       - name: Checkout Server
         uses: actions/checkout@v4
         with:
           repository: AlexDobsonPleming/federated-learning-clinical-safety-server
           path: server
-          # if private, supply a PAT via secrets.SERVER_PAT:
-          # token: ${{ secrets.SERVER_PAT }}
 
-      # 3) Install Docker Compose
       - name: Install Docker Compose
         run: sudo apt-get update && sudo apt-get install -y docker-compose
 
-      # 4) Start server stack
-      - name: Build & start server
+      - name: Build & start server (with seed & uploader)
+        working-directory: server
+        run: docker compose -f docker-compose.test.yml up --build -d
+
+      - name: Wait for API to bind port 8000
         working-directory: server
         run: |
-          docker compose -f docker-compose.test.yml up --build -d
+          for i in $(seq 1 20); do
+            if ss -ltn | grep -q ':8000'; then
+              echo "✅ port 8000 is listening"
+              exit 0
+            fi
+            echo "⏳ waiting for port 8000..."
+            sleep 2
+          done
+          echo "❌ port 8000 never bound"
+          docker compose -f docker-compose.test.yml logs api
+          exit 1
 
-      # 5) Wait until API responds
-      - name: Verify "api" container is up
+      - name: Verify "api" container is Up
         working-directory: server
         run: |
-          # This will print something like:
-          #    Name   Command   Service   Status            Ports
-          # federated-learning-clinical-safety-server-api-1   ...   api   Up Less than a second   0.0.0.0:8000->8000/tcp
-          docker compose -f docker-compose.test.yml ps api
-
-          # Now verify the word "Up" appears in the status column
-          if ! docker compose -f docker-compose.test.yml ps api \
-               | grep -qw Up; then
-            echo "❌ api service did not start properly"
+          if ! docker compose -f docker-compose.test.yml ps api | grep -qw Up; then
+            echo "❌ api container failed to stay Up"
             docker compose -f docker-compose.test.yml logs api
             exit 1
           fi
-
           echo "✅ api container is Up"
 
-      - name: Check port 8000 is listening
+      - name: Extract SDK_TEST_TOKEN
+        working-directory: server
         run: |
-          # 'ss' is available on ubuntu-latest runners
-          if ! ss -ltn | grep -q ':8000'; then
-            echo "❌ Nothing is listening on port 8000"
-            docker compose -f docker-compose.test.yml logs api
+          LOGS=$(docker compose -f docker-compose.test.yml logs api)
+          echo "$LOGS"
+          TOKEN=$(echo "$LOGS" | grep '^Token:' | head -n1 | awk '{print $2}')
+          if [ -z "$TOKEN" ]; then
+            echo "❌ Could not find Token in logs"
             exit 1
           fi
+          echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
 
-          echo "✅ api is listening on port 8000"
-
-      
-
-      # 6) Install & run SDK tests
       - name: Setup Python & Poetry
         uses: actions/setup-python@v4
         with:
@@ -75,19 +73,12 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-ansi
 
-      - name: Read token from server logs
-        run: |
-          export SDK_TEST_TOKEN=$(docker compose -f server/docker-compose.test.yml logs api \
-            | grep 'Token:' | head -n1 | awk '{print $2}')
-          echo "SDK_TEST_TOKEN=$SDK_TEST_TOKEN" >> $GITHUB_ENV
-
       - name: Run integration tests
         env:
           API_BASE_URL: http://localhost:8000/api
           SDK_TEST_TOKEN: ${{ env.SDK_TEST_TOKEN }}
         run: poetry run pytest src/tests/test_integration.py
 
-      # 7) Tear down
       - name: Tear down
         if: always()
         working-directory: server
