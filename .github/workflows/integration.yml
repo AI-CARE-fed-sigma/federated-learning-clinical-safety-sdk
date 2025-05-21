@@ -85,7 +85,7 @@ jobs:
         env:
           API_BASE_URL: http://localhost:8000/api
           SDK_TEST_TOKEN: ${{ env.SDK_TEST_TOKEN }}
-        run: poetry run pytest tests/test_integration_docker.py
+        run: poetry run pytest tests/test_integration.py
 
       # 7) Tear down
       - name: Tear down
