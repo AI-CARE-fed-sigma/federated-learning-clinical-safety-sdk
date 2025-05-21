@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push: {}
+  pull_request: {}
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out the code
+      - uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'           # pinned version for consistency :contentReference[oaicite:2]{index=2}
+          cache: 'poetry'                  # cache Poetry’s dependencies
+
+      # 3. Install Poetry CLI
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v4    # installs latest Poetry quickly :contentReference[oaicite:3]{index=3}
+
+      # 4. Configure in-project virtualenv
+      - name: Configure Poetry venv
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      # 5. Cache .venv based on poetry.lock
+      - name: Cache .venv
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      # 6. Install dependencies and project in editable mode
+      - name: Poetry install
+        run: poetry install --no-interaction --no-ansi   # installs deps + your package :contentReference[oaicite:4]{index=4}
+
+      # 7. Run lint (flake8, mypy, black, etc.)
+      - name: Lint & type-check
+        run: |
+          poetry run flake8 src/           # example linter
+          poetry run mypy src/             # example type-checker :contentReference[oaicite:5]{index=5}
+
+      # 8. Run tests
+      - name: Run tests
+        run: poetry run pytest --maxfail=1 --disable-warnings -q   # runs under Poetry’s venv :contentReference[oaicite:6]{index=6}
