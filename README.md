@@ -100,3 +100,20 @@ git tag v<version number (i.e. 0.1.1)>
 ```bash
 git push origin v<version number from step 2 (i.e. 0.1.1)>
 ```
+
+### Integration testing
+
+To test the SDK works with the server integration testing with docker has been added.
+
+This will also run as part of the GitHub CI platform.
+
+```bash
+export API_BASE_URL="http://localhost:8000/api"
+
+export SDK_TEST_TOKEN=<token from your live instance>
+
+poetry install
+
+poetry run pytest src/tests/test_integration.py -q
+
+```
