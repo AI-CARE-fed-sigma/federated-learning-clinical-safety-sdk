@@ -1,0 +1,78 @@
+name: SDK ↔ Server Integration
+
+on: [push, pull_request]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout your SDK
+      - name: Checkout SDK
+        uses: actions/checkout@v4
+
+      # 2) Checkout the server repo into ./server
+      - name: Checkout Server
+        uses: actions/checkout@v4
+        with:
+          repository: AlexDobsonPleming/federated-learning-clinical-safety-server
+          path: server
+          # if private, supply a PAT via secrets.SERVER_PAT:
+          # token: ${{ secrets.SERVER_PAT }}
+
+      # 3) Install Docker Compose
+      - name: Install Docker Compose
+        run: sudo apt-get update && sudo apt-get install -y docker-compose
+
+      # 4) Start server stack
+      - name: Build & start server
+        working-directory: server
+        run: |
+          docker compose -f docker-compose.test.yml up --build -d
+
+      # 5) Wait until API responds
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/models/)
+            if [[ "$status" == "200" || "$status" == "401" ]]; then
+              echo "API is up (status $status)"
+              exit 0
+            fi
+            echo "Waiting for API… ($status)"
+            sleep 2
+          done
+          echo "❌ API did not become ready"
+          docker compose -f docker-compose.test.yml logs api
+          exit 1
+
+      # 6) Install & run SDK tests
+      - name: Setup Python & Poetry
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install SDK dependencies
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-ansi
+
+      - name: Read token from server logs
+        run: |
+          export SDK_TEST_TOKEN=$(docker compose -f server/docker-compose.test.yml logs api \
+            | grep 'Token:' | head -n1 | awk '{print $2}')
+          echo "SDK_TEST_TOKEN=$SDK_TEST_TOKEN" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        env:
+          API_BASE_URL: http://localhost:8000/api
+          SDK_TEST_TOKEN: ${{ env.SDK_TEST_TOKEN }}
+        run: poetry run pytest tests/test_integration_docker.py
+
+      # 7) Tear down
+      - name: Tear down
+        if: always()
+        working-directory: server
+        run: docker compose -f docker-compose.test.yml down --volumes --remove-orphans
