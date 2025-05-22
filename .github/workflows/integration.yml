@@ -27,6 +27,12 @@ jobs:
         working-directory: server
         run: docker compose -f docker-compose.test.yml up --force-recreate -d
 
+      - name: Debug API startup logs
+        working-directory: server
+        run: |
+          echo "🔍 Dumping api_test logs right after up:"
+          docker compose -f docker-compose.test.yml logs api_test || true
+
       - name: Wait for API to bind port 8000
         working-directory: server
         run: |
