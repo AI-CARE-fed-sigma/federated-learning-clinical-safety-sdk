@@ -64,6 +64,19 @@ jobs:
 
           echo "✅ api_test container ($CID) is running"
 
+      - name: Debug token creation in container logs
+        working-directory: server
+        run: |
+          CID=$(docker ps -aq -f "name=^api_test$")
+          echo "🔍 Container logs for api_test ($CID):"
+          docker logs $CID || true
+          echo
+          echo "🔍 Looking for the write confirmation:"
+          if docker logs $CID 2>&1 | grep -q 'Wrote token to'; then
+            echo "✅ Found the write confirmation in the logs."
+          else
+            echo "❌ No 'Wrote token to' message — the management command may not be running or has no file‐write."
+          fi
 
       - name: Extract SDK_TEST_TOKEN from file
         working-directory: server
