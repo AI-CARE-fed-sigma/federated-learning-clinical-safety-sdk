@@ -34,8 +34,9 @@ jobs:
           docker compose -f docker-compose.test.yml logs api || true
           echo
           echo "🔍 Dumping docker logs for container 'api_test':"
-          docker logs api_test || true
+          docker logs --timestamps api_test || true
           echo
+          docker inspect api_test --format='Entrypoint: {{.Config.Entrypoint}} Cmd: {{.Config.Cmd}}'
           echo "🔍 Searching logs for token-write confirmation:"
           if (docker compose -f docker-compose.test.yml logs api; docker logs api_test) 2>&1 | grep -q 'Wrote token to'; then
             echo "✅ Found the write confirmation in the logs."
