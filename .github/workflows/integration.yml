@@ -30,8 +30,19 @@ jobs:
       - name: Debug API startup logs
         working-directory: server
         run: |
-          echo "🔍 Dumping api_test logs right after up:"
-          docker compose -f docker-compose.test.yml logs api_test || true
+          echo "🔍 Dumping compose logs for service 'api':"
+          docker compose -f docker-compose.test.yml logs api || true
+          echo
+          echo "🔍 Dumping docker logs for container 'api_test':"
+          docker logs api_test || true
+          echo
+          echo "🔍 Searching logs for token-write confirmation:"
+          if (docker compose -f docker-compose.test.yml logs api; docker logs api_test) 2>&1 | grep -q 'Wrote token to'; then
+            echo "✅ Found the write confirmation in the logs."
+          else
+            echo "❌ No 'Wrote token to' message — your create_uploader may not be running."
+            exit 1
+          fi
 
       - name: Wait for API to bind port 8000
         working-directory: server
