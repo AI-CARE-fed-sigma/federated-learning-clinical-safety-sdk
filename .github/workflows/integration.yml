@@ -17,94 +17,34 @@ jobs:
           path: server
 
       - name: Install Docker Compose
-        run: sudo apt-get update && sudo apt-get install -y docker-compose dos2unix
+        run: sudo apt-get update && sudo apt-get install -y docker-compose
 
-      - name: Build server image without cache
+      - name: Build server image
         working-directory: server
         run: docker compose -f docker-compose.test.yml build --no-cache
 
-      - name: Bring up server (fresh build)
+      - name: Start server
         working-directory: server
-        run: docker compose -f docker-compose.test.yml up --force-recreate -d
+        run: docker compose -f docker-compose.test.yml up -d
 
-      - name: Dump entrypoint script & full logs
-        working-directory: server
-        run: |
-          CID=$(docker ps -aq -f "name=^api_test$")
-          echo "🔍 /app/docker-entrypoint.sh contents:"
-          docker exec $CID cat /app/docker-entrypoint.sh || true
-          echo
-          echo "🔍 Full timestamped logs:"
-          docker logs --timestamps $CID || true
-
-      - name: Check container exit code & tail logs
-        working-directory: server
-        run: |
-          CID=$(docker ps -aq -f "name=^api_test$")
-          echo "📦 api_test ExitCode & Status:"
-          docker inspect --format='ExitCode={{.State.ExitCode}} Status={{.State.Status}}' $CID
-          echo
-          echo "🔍 Last 50 lines of raw logs:"
-          docker logs --tail 50 $CID || true
-
-      - name: Wait for API to bind port 8000
+      - name: Wait for API
         working-directory: server
         run: |
           for i in $(seq 1 20); do
             if ss -ltn | grep -q ':8000'; then
-              echo "✅ port 8000 is listening"
+              echo "✅ API is up"
               exit 0
             fi
-            echo "⏳ waiting for port 8000..."
             sleep 2
           done
-          echo "❌ port 8000 never bound"
           docker compose -f docker-compose.test.yml logs api
           exit 1
 
-      - name: Verify "api_test" container is up
+      - name: Extract SDK_TEST_TOKEN
         working-directory: server
         run: |
-          CID=$(docker ps -aq -f "name=^api_test$")
-          if [ -z "$CID" ]; then
-            echo "❌ Could not find a container named api_test"
-            docker ps -a
-            exit 1
-          fi
-          if ! docker inspect --format='{{.State.Running}}' $CID | grep -q true; then
-            echo "❌ api_test container is not running"
-            echo "→ State: $(docker inspect --format='{{.State.Status}}' $CID)'"
-            echo "----- logs -----"
-            docker logs $CID || true
-            exit 1
-          fi
-          echo "✅ api_test container ($CID) is running"
-
-      - name: Debug token creation in container logs
-        working-directory: server
-        run: |
-          CID=$(docker ps -aq -f "name=^api_test$")
-          echo "🔍 Container logs for api_test ($CID):"
-          docker logs $CID || true
-          echo
-          echo "🔍 Looking for the write confirmation:"
-          if docker logs $CID 2>&1 | grep -q 'Wrote token to'; then
-            echo "✅ Found the write confirmation."
-          else
-            echo "❌ No 'Wrote token to' message."
-          fi
-
-      - name: Extract SDK_TEST_TOKEN from file
-        working-directory: server
-        run: |
-          CID=$(docker ps -aq -f "name=^api_test$")
-          echo "📦 Using container $CID"
-          echo "Contents of /tmp in api_test:"
-          docker exec $CID ls -la /tmp || true
-          docker cp $CID:/tmp/uploader_token.txt uploader_token.txt
-          TOKEN=$(cat uploader_token.txt)
-          echo "✅ Got SDK_TEST_TOKEN=$TOKEN"
-          echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
+          docker cp api_test:/tmp/uploader_token.txt uploader_token.txt
+          echo "SDK_TEST_TOKEN=$(cat uploader_token.txt)" >> $GITHUB_ENV
 
       - name: Setup Python & Poetry
         uses: actions/setup-python@v4
@@ -114,12 +54,14 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install SDK dependencies
+      - name: Install SDK deps
+        working-directory: .
         run: |
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-ansi
 
       - name: Run integration tests
+        working-directory: .
         env:
           API_BASE_URL: http://localhost:8000/api
           SDK_TEST_TOKEN: ${{ env.SDK_TEST_TOKEN }}
