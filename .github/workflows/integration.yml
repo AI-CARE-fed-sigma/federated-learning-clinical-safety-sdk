@@ -17,7 +17,7 @@ jobs:
           path: server
 
       - name: Install Docker Compose
-        run: sudo apt-get update && sudo apt-get install -y docker-compose
+        run: sudo apt-get update && sudo apt-get install -y docker-compose dos2unix
 
       - name: Build server image without cache
         working-directory: server
@@ -37,6 +37,16 @@ jobs:
           echo "🔍 Full timestamped logs:"
           docker logs --timestamps $CID || true
 
+      - name: Check container exit code & tail logs
+        working-directory: server
+        run: |
+          CID=$(docker ps -aq -f "name=^api_test$")
+          echo "📦 api_test ExitCode & Status:"
+          docker inspect --format='ExitCode={{.State.ExitCode}} Status={{.State.Status}}' $CID
+          echo
+          echo "🔍 Last 50 lines of raw logs:"
+          docker logs --tail 50 $CID || true
+
       - name: Wait for API to bind port 8000
         working-directory: server
         run: |
@@ -55,23 +65,19 @@ jobs:
       - name: Verify "api_test" container is up
         working-directory: server
         run: |
-          # Look for any container (running or stopped) named exactly "api_test"
           CID=$(docker ps -aq -f "name=^api_test$")
           if [ -z "$CID" ]; then
             echo "❌ Could not find a container named api_test"
             docker ps -a
             exit 1
           fi
-
-          # Check that it's running
           if ! docker inspect --format='{{.State.Running}}' $CID | grep -q true; then
-            echo "❌ api_test container is not running (it may have exited)"
+            echo "❌ api_test container is not running"
             echo "→ State: $(docker inspect --format='{{.State.Status}}' $CID)'"
             echo "----- logs -----"
             docker logs $CID || true
             exit 1
           fi
-
           echo "✅ api_test container ($CID) is running"
 
       - name: Debug token creation in container logs
@@ -83,9 +89,9 @@ jobs:
           echo
           echo "🔍 Looking for the write confirmation:"
           if docker logs $CID 2>&1 | grep -q 'Wrote token to'; then
-            echo "✅ Found the write confirmation in the logs."
+            echo "✅ Found the write confirmation."
           else
-            echo "❌ No 'Wrote token to' message — the management command may not be running or has no file‐write."
+            echo "❌ No 'Wrote token to' message."
           fi
 
       - name: Extract SDK_TEST_TOKEN from file
@@ -93,19 +99,12 @@ jobs:
         run: |
           CID=$(docker ps -aq -f "name=^api_test$")
           echo "📦 Using container $CID"
-
-          # List /tmp so we can see exactly what's there
           echo "Contents of /tmp in api_test:"
           docker exec $CID ls -la /tmp || true
-
-          # Copy the token
           docker cp $CID:/tmp/uploader_token.txt uploader_token.txt
-
-          # Read and export
           TOKEN=$(cat uploader_token.txt)
           echo "✅ Got SDK_TEST_TOKEN=$TOKEN"
           echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
-
 
       - name: Setup Python & Poetry
         uses: actions/setup-python@v4
