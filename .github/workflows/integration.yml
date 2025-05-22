@@ -56,14 +56,9 @@ jobs:
       - name: Extract SDK_TEST_TOKEN from file
         working-directory: server
         run: |
-          # find the container ID for the api service
-          CID=$(docker compose -f docker-compose.test.yml ps -q api)
-          echo "📦 api container ID is $CID"
-
-          # copy the token file out
-          docker cp $CID:/tmp/uploader_token.txt uploader_token.txt
-
-          # read it into an env var
+          # copy the token file out by container name
+          docker cp api_test:/tmp/uploader_token.txt uploader_token.txt
+      
           TOKEN=$(cat uploader_token.txt)
           echo "✅ Got SDK_TEST_TOKEN=$TOKEN"
           echo "SDK_TEST_TOKEN=$TOKEN" >> $GITHUB_ENV
