@@ -7,6 +7,7 @@ class FlModel(BaseModel):
     accuracy: Optional[float] = None
     generalisability: Optional[float] = None
     privacy: Optional[float] = None
+    leakage_chance: Optional[float] = None
 
     class Config:
         orm_mode = True

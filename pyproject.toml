@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "federated-learning-clinical-safety-sdk"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python SDK for the Federated Learning Clinical Safety API"
 authors = ["Alexander Dobson-Pleming <alexdobsonpleming@gmail.com>"]
 license = "MIT"
