@@ -19,37 +19,9 @@ The package is [available from PyPi](https://pypi.org/project/federated-learning
 pip install federated-learning-clinical-safety-sdk
 ```
 
-### 🚀 Quickstart code
+### Getting started
 
-```
-from api_sdk.client import APIClient
-from api_sdk.models import FlModel
-
-# 1. Initialize
-BASE_URL = "http://localhost:8000/api"       # i.e. vht-dev.shef.ac.uk/api
-TOKEN    = "your_api_token_here"             # create a machine account with create_uploader <username>
-
-client = APIClient(BASE_URL, TOKEN)
-
-# 2. List all federated models
-models = client.list_models()
-for m in models:
-    print(f"{m.id}: {m.name} ({m.accuracy*100:.1f}% accuracy)")
-
-# 3. Fetch a single model by ID
-model = client.get_model(model_id=1)
-print(model)
-
-# 4. Create a new model
-new = FlModel(
-    name="MyModel",
-    accuracy=0.88,
-    generalisability=0.82,
-    security=0.75
-)
-created = client.create_model(new)
-print(f"Created model ID = {created.id}")
-```
+Read our [code examples](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/wiki/Code-examples) to get an idea of how to use this package.
 
 ## Development
 ### Prerequisites
