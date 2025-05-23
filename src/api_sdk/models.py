@@ -1,19 +1,26 @@
-# src/my_api_sdk/models.py
+from typing import Optional
 from pydantic import BaseModel, Field
 
 class FlModel(BaseModel):
-    id: int | None = None
+    id: Optional[int] = None
     name: str
-    accuracy: float
-    generalisability: float = Field(..., alias="generalisability")
-    security: float | None = None
+    accuracy: Optional[float] = None
+    generalisability: Optional[float] = None
+    privacy: Optional[float] = None
 
     class Config:
+        orm_mode = True
         allow_population_by_field_name = True
 
+
 class LocalModel(BaseModel):
-    id: int | None = None
-    fl_model: int
+    id: Optional[int] = None
+    fl_model: int  # just the FK id
     name: str
-    relatability: float
-    source: str
+    privacy: Optional[float] = None
+    leakage_chance: Optional[float] = None
+    noise: Optional[float] = None
+
+    class Config:
+        orm_mode = True
+        allow_population_by_field_name = True
