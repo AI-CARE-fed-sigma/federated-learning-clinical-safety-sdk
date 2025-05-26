@@ -5,8 +5,6 @@ This is the documentation for the Federated Learning Clinical Safety Dashboard S
 
 [![CI](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/ci.yml)
 
-[![SDK ↔ Server Integration](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/integration.yml/badge.svg)](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/integration.yml)
-
 [![📦 Publish to PyPI](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/publish.yml/badge.svg)](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/publish.yml)
 
 ## Using the SDK
