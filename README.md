@@ -7,6 +7,8 @@ This is the documentation for the Federated Learning Clinical Safety Dashboard S
 
 [![📦 Publish to PyPI](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/publish.yml/badge.svg)](https://github.com/AlexDobsonPleming/federated-learning-clinical-safety-sdk/actions/workflows/publish.yml)
 
+[![DOI](https://zenodo.org/badge/987939823.svg)](https://doi.org/10.5281/zenodo.15521158)
+
 ## Using the SDK
 
 The package is [available from PyPi](https://pypi.org/project/federated-learning-clinical-safety-sdk/).
